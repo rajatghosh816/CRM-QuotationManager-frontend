@@ -2,6 +2,7 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { API_URL } from '../api';
+import { ENDPOINTS } from '../api-endpoints';
 import { AuthService } from './auth.service';
 
 /** Adds the bearer token to API calls and signs the user out when it is rejected. */
@@ -13,7 +14,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authed).pipe(
     catchError((err: unknown) => {
-      if (err instanceof HttpErrorResponse && err.status === 401 && isApi && !req.url.endsWith('/auth/login')) {
+      if (err instanceof HttpErrorResponse && err.status === 401 && isApi && req.url !== ENDPOINTS.auth.login) {
         auth.logout();
       }
       return throwError(() => err);

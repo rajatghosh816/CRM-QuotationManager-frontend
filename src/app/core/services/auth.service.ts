@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, map, tap } from 'rxjs';
-import { API_URL } from '../api';
+import { ENDPOINTS } from '../api-endpoints';
 import { AuthResponse, Role, User } from '../models';
 
 const SESSION_KEY = 'crmqm.session';
@@ -32,7 +32,7 @@ export class AuthService {
   }
 
   login(email: string, password: string): Observable<User> {
-    return this.http.post<AuthResponse>(`${API_URL}/auth/login`, { email, password }).pipe(
+    return this.http.post<AuthResponse>(ENDPOINTS.auth.login, { email, password }).pipe(
       tap((res) => this.setSession(res)),
       map((res) => res.user),
     );
@@ -40,7 +40,7 @@ export class AuthService {
 
   /** Re-reads the current user, e.g. after the profile name changes. */
   refreshUser(): Observable<User> {
-    return this.http.get<User>(`${API_URL}/auth/me`).pipe(
+    return this.http.get<User>(ENDPOINTS.auth.me).pipe(
       tap((user) => {
         const s = this.session();
         if (s) this.setSession({ token: s.token, user });
@@ -49,7 +49,7 @@ export class AuthService {
   }
 
   changePassword(currentPassword: string, newPassword: string): Observable<unknown> {
-    return this.http.put(`${API_URL}/auth/password`, { currentPassword, newPassword });
+    return this.http.put(ENDPOINTS.auth.password, { currentPassword, newPassword });
   }
 
   logout(): void {

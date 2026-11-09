@@ -2,6 +2,7 @@ import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 
+import { environment } from '../environments/environment';
 import { routes } from './app.routes';
 import { mockBackendInterceptor } from './core/mock/mock-backend.interceptor';
 import { authInterceptor } from './core/services/auth.interceptor';
@@ -14,8 +15,8 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withInterceptors([
         authInterceptor,
-        // MOCK: answers /api/** from in-memory data. Remove this line to use the real backend.
-        mockBackendInterceptor,
+        // MOCK: answers API calls from in-memory data. Toggle with `useMockBackend` in src/environments.
+        ...(environment.useMockBackend ? [mockBackendInterceptor] : []),
       ]),
     ),
   ],

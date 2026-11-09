@@ -19,13 +19,15 @@ import {
   UserRecord,
 } from '../models';
 import { quotationTotals } from '../quotation-math';
+import { environment } from '../../../environments/environment';
+import { API_URL } from '../api';
 import { mockDb, newId } from './mock-db';
 
 /*
  * Fake REST backend. Every request to /api/** is answered here from the
  * in-memory mock database, so the services and components are written exactly
- * as they will be against the real server. To switch to the real backend,
- * remove `mockBackendInterceptor` from app.config.ts.
+ * as they will be against the real server. It is only registered when
+ * `useMockBackend` is true in the active environment file.
  */
 
 const LATENCY_MS = 250;
@@ -641,7 +643,8 @@ function userFromToken(req: HttpRequest<unknown>): UserRecord | null {
 }
 
 function handle(req: HttpRequest<unknown>): Observable<HttpResponse<unknown>> {
-  const path = new URL(req.urlWithParams, location.origin).pathname;
+  // Mock routes are written against `/api/...`; map whatever API_URL is onto that.
+  const path = '/api' + new URL(req.urlWithParams.slice(API_URL.length), 'http://mock').pathname;
   for (const r of routes) {
     if (r.method !== req.method) continue;
     const match = r.regex.exec(path);
@@ -665,8 +668,14 @@ function handle(req: HttpRequest<unknown>): Observable<HttpResponse<unknown>> {
   );
 }
 
+/** True when `environment.liveEndpoints` says the real backend already serves this request. */
+function isLive(req: HttpRequest<unknown>): boolean {
+  const path = new URL(req.url.slice(API_URL.length), 'http://mock').pathname;
+  return environment.liveEndpoints.some((prefix) => path === prefix || path.startsWith(prefix.replace(/\/$/, '') + '/'));
+}
+
 export const mockBackendInterceptor: HttpInterceptorFn = (req, next) => {
-  if (!req.url.startsWith('/api/')) return next(req);
+  if (!req.url.startsWith(API_URL + '/') || isLive(req)) return next(req);
   // materialize/dematerialize so errors are delayed too, like a real network.
   return handle(req).pipe(materialize(), delay(LATENCY_MS), dematerialize());
 };

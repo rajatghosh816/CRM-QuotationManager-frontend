@@ -1,7 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
-/** Base URL of the REST API. Point this at the real backend when it is ready. */
-export const API_URL = '/api';
+/** Base URL of the REST API, taken from the active environment file (dev / uat / prod). */
+export const API_URL = environment.apiUrl;
 
 /** Turns any HTTP error into a sentence that can be shown to the user. */
 export function errorMessage(err: unknown): string {
