@@ -1,0 +1,36 @@
+<app-page-header title="My profile" subtitle="Your contact details appear on the quotations you receive." />
+@if (model(); as m) {
+  <div class="space-y-6">
+    <form #f="ngForm" (ngSubmit)="save(m)" [class]="ui.card">
+      <div class="grid gap-4 p-5 sm:grid-cols-2">
+        <div>
+          <label [class]="ui.label" for="name">Name *</label>
+          <input id="name" name="name" required [class]="ui.input" [(ngModel)]="m.name" />
+        </div>
+        <div>
+          <label [class]="ui.label" for="company">Company</label>
+          <input id="company" name="company" [class]="ui.input" [(ngModel)]="m.company" />
+        </div>
+        <div>
+          <label [class]="ui.label" for="email">Email</label>
+          <input id="email" name="email" disabled [class]="ui.input" [ngModel]="m.email" />
+          <p class="mt-1 text-xs text-slate-500">To change your sign-in email, contact the business.</p>
+        </div>
+        <div>
+          <label [class]="ui.label" for="phone">Phone</label>
+          <input id="phone" name="phone" [class]="ui.input" [(ngModel)]="m.phone" />
+        </div>
+        <div class="sm:col-span-2">
+          <label [class]="ui.label" for="address">Address</label>
+          <textarea id="address" name="address" rows="2" [class]="ui.input" [(ngModel)]="m.address"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end border-t border-slate-200 px-5 py-3">
+        <button type="submit" [class]="ui.btnPrimary" [disabled]="saving() || f.invalid">Save changes</button>
+      </div>
+    </form>
+    <app-change-password />
+  </div>
+} @else {
+  <app-loading />
+}

@@ -1,0 +1,61 @@
+@if (q(); as q) {
+  <div class="print:hidden">
+    <app-page-header [title]="q.number" [subtitle]="q.title">
+      <a back routerLink="/business/quotations" [class]="ui.btnGhost + ' mb-2 -ml-2'"><app-icon name="arrowLeft" size="size-4" />Quotations</a>
+      @if (q.status !== 'accepted') {
+        <a [routerLink]="['edit']" [class]="ui.btnSecondary"><app-icon name="pencil" size="size-4" />Edit</a>
+      }
+      <button type="button" [class]="ui.btnSecondary" (click)="duplicate()" [disabled]="busy()"><app-icon name="copy" size="size-4" />Duplicate</button>
+      <button type="button" [class]="ui.btnSecondary" (click)="print()"><app-icon name="printer" size="size-4" />Print / PDF</button>
+      @if (canSend()) {
+        <button type="button" [class]="ui.btnPrimary" (click)="send()" [disabled]="busy()">
+          <app-icon name="send" size="size-4" />{{ q.status === 'draft' ? 'Send to customer' : 'Re-send' }}
+        </button>
+      }
+    </app-page-header>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-3">
+    <div class="lg:col-span-2">
+      <app-quotation-document [quotation]="q" />
+    </div>
+
+    <aside class="space-y-6 print:hidden">
+      <section [class]="ui.card + ' p-5'">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-semibold text-slate-900">Status</h2>
+          <app-status-badge [status]="q.status" />
+        </div>
+        <dl class="mt-4 space-y-2 text-sm">
+          <div class="flex justify-between"><dt class="text-slate-500">Total</dt><dd class="font-semibold text-slate-900">{{ total() | currency: q.business.currency }}</dd></div>
+          <div class="flex justify-between"><dt class="text-slate-500">Customer</dt><dd><a [routerLink]="['/business/customers', q.customer.id]" [class]="ui.link">{{ q.customer.name }}</a></dd></div>
+          <div class="flex justify-between"><dt class="text-slate-500">Valid until</dt><dd class="text-slate-900">{{ q.validUntil | date: 'mediumDate' }}</dd></div>
+          <div class="flex justify-between"><dt class="text-slate-500">Last updated</dt><dd class="text-slate-900">{{ q.updatedAt | date: 'MMM d, h:mm a' }}</dd></div>
+        </dl>
+        @if (q.customerComment) {
+          <div class="mt-4 rounded-lg p-3 text-sm" [class]="q.status === 'rejected' ? 'bg-rose-50 text-rose-800' : 'bg-emerald-50 text-emerald-800'">
+            <p class="font-medium">Customer's comment</p>
+            <p class="mt-1">“{{ q.customerComment }}”</p>
+          </div>
+        }
+        @if (q.status === 'draft') {
+          <p class="mt-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">The customer can't see this quotation until you send it.</p>
+        }
+        @if (q.status === 'expired') {
+          <p class="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">This quotation expired. Edit it to extend the validity date, then send it again.</p>
+        }
+      </section>
+
+      <section [class]="ui.card + ' p-5'">
+        <h2 class="mb-4 text-base font-semibold text-slate-900">Activity</h2>
+        <app-activity-log [activity]="q.activity" />
+      </section>
+
+      <button type="button" [class]="ui.btnGhostDanger + ' w-full'" (click)="remove()" [disabled]="busy()">
+        <app-icon name="trash" size="size-4" />Delete quotation
+      </button>
+    </aside>
+  </div>
+} @else {
+  <app-loading />
+}

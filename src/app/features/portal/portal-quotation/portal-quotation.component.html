@@ -1,0 +1,73 @@
+@if (q(); as q) {
+  <div class="print:hidden">
+    <app-page-header [title]="q.number" [subtitle]="q.title">
+      <a back routerLink="/portal/quotations" [class]="ui.btnGhost + ' mb-2 -ml-2'"><app-icon name="arrowLeft" size="size-4" />My quotations</a>
+      <button type="button" [class]="ui.btnSecondary" (click)="print()"><app-icon name="printer" size="size-4" />Print / PDF</button>
+    </app-page-header>
+  </div>
+
+  @if (open()) {
+    <div class="mb-6 flex flex-col gap-4 rounded-xl bg-indigo-600 p-5 text-white shadow-sm sm:flex-row sm:items-center sm:justify-between print:hidden">
+      <div>
+        <p class="font-semibold">{{ q.business.name }} is waiting for your decision</p>
+        <p class="text-sm text-indigo-100">
+          Total {{ total() | currency: q.business.currency }} · valid until {{ q.validUntil | date: 'longDate' }}
+        </p>
+      </div>
+      <div class="flex gap-2">
+        <button type="button" class="rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/30 hover:bg-white/20"
+          (click)="decision.set('reject')">Decline</button>
+        <button type="button" class="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm hover:bg-indigo-50"
+          (click)="decision.set('accept')">Accept quotation</button>
+      </div>
+    </div>
+  } @else {
+    <div class="mb-6 flex items-start gap-3 rounded-xl p-4 text-sm ring-1 print:hidden"
+      [class]="q.status === 'accepted' ? 'bg-emerald-50 text-emerald-800 ring-emerald-200'
+        : q.status === 'rejected' ? 'bg-rose-50 text-rose-800 ring-rose-200' : 'bg-amber-50 text-amber-800 ring-amber-200'">
+      <app-status-badge [status]="q.status" [customerView]="true" />
+      <div>
+        @switch (q.status) {
+          @case ('accepted') { <p>You accepted this quotation. {{ q.business.name }} will be in touch about next steps.</p> }
+          @case ('rejected') { <p>You declined this quotation.</p> }
+          @case ('expired') { <p>This quotation expired on {{ q.validUntil | date: 'longDate' }}. Ask {{ q.business.name }} for an updated one.</p> }
+        }
+        @if (q.customerComment) {
+          <p class="mt-1">Your comment: “{{ q.customerComment }}”</p>
+        }
+      </div>
+    </div>
+  }
+
+  <app-quotation-document [quotation]="q" />
+
+  @if (decision(); as d) {
+    <app-modal [title]="d === 'accept' ? 'Accept quotation ' + q.number : 'Decline quotation ' + q.number" (closed)="decision.set(null)">
+      <form (ngSubmit)="submit(d)" class="space-y-4">
+        @if (d === 'accept') {
+          <p class="text-sm text-slate-600">
+            You're accepting <span class="font-medium text-slate-900">{{ q.title }}</span> for
+            <span class="font-medium text-slate-900">{{ total() | currency: q.business.currency }}</span>, subject to the terms shown on the quotation.
+          </p>
+        } @else {
+          <p class="text-sm text-slate-600">Let {{ q.business.name }} know why, so they can send a better offer.</p>
+        }
+        <div>
+          <label [class]="ui.label" for="comment">{{ d === 'accept' ? 'Message (optional)' : 'Reason *' }}</label>
+          <textarea id="comment" name="comment" rows="3" [class]="ui.input" [(ngModel)]="comment"
+            [placeholder]="d === 'accept' ? 'e.g. Please schedule installation for next month.' : 'e.g. The budget is lower than this.'"></textarea>
+        </div>
+        <div class="flex justify-end gap-3">
+          <button type="button" [class]="ui.btnSecondary" (click)="decision.set(null)">Cancel</button>
+          @if (d === 'accept') {
+            <button type="submit" [class]="ui.btnSuccess" [disabled]="busy()">Accept</button>
+          } @else {
+            <button type="submit" [class]="ui.btnDanger" [disabled]="busy() || !comment.trim()">Decline</button>
+          }
+        </div>
+      </form>
+    </app-modal>
+  }
+} @else {
+  <app-loading />
+}

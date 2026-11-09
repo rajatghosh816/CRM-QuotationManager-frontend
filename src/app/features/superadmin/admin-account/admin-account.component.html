@@ -1,0 +1,11 @@
+<app-page-header title="My account" />
+<div class="space-y-6">
+  <section [class]="ui.card + ' p-5'">
+    <dl class="grid gap-4 sm:grid-cols-3">
+      <div><dt class="text-sm text-slate-500">Name</dt><dd class="font-medium text-slate-900">{{ user()?.name }}</dd></div>
+      <div><dt class="text-sm text-slate-500">Email</dt><dd class="font-medium text-slate-900">{{ user()?.email }}</dd></div>
+      <div><dt class="text-sm text-slate-500">Role</dt><dd class="font-medium text-slate-900">Super admin</dd></div>
+    </dl>
+  </section>
+  <app-change-password />
+</div>

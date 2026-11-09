@@ -1,0 +1,65 @@
+<app-page-header title="Subscription plans" subtitle="What businesses pay and what they get.">
+  <button type="button" [class]="ui.btnPrimary" (click)="openNew()"><app-icon name="plus" size="size-4" />New plan</button>
+</app-page-header>
+
+@if (loading()) {
+  <app-loading />
+} @else {
+  <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+    @for (p of plans(); track p.id) {
+      <article [class]="ui.card + ' flex flex-col p-6'">
+        <h2 class="text-lg font-semibold text-slate-900">{{ p.name }}</h2>
+        <p class="mt-2">
+          <span class="text-3xl font-semibold tracking-tight text-slate-900">{{ p.priceMonthly | currency: 'USD' : 'symbol' : '1.0-0' }}</span>
+          <span class="text-sm text-slate-500">/month</span>
+        </p>
+        <dl class="mt-4 grid grid-cols-2 gap-3 rounded-lg bg-slate-50 p-3 text-sm">
+          <div><dt class="text-slate-500">Users</dt><dd class="font-medium text-slate-900">{{ p.maxUsers }}</dd></div>
+          <div><dt class="text-slate-500">Quotes / month</dt><dd class="font-medium text-slate-900">{{ p.maxQuotationsPerMonth }}</dd></div>
+        </dl>
+        <ul class="mt-4 flex-1 space-y-2 text-sm text-slate-600">
+          @for (f of p.features; track f) {
+            <li class="flex gap-2"><app-icon name="check" size="size-4 text-emerald-600 mt-0.5" />{{ f }}</li>
+          }
+        </ul>
+        <div class="mt-6 flex gap-2 border-t border-slate-100 pt-4">
+          <button type="button" [class]="ui.btnSecondary" (click)="openEdit(p)">Edit</button>
+          <button type="button" [class]="ui.btnGhostDanger" (click)="remove(p)">Delete</button>
+        </div>
+      </article>
+    }
+  </div>
+}
+
+@if (form(); as m) {
+  <app-modal [title]="m.id ? 'Edit plan' : 'New plan'" (closed)="form.set(null)">
+    <form #f="ngForm" (ngSubmit)="save(m)" class="space-y-4">
+      <div>
+        <label [class]="ui.label" for="pname">Name *</label>
+        <input id="pname" name="name" required [class]="ui.input" [(ngModel)]="m.name" />
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <label [class]="ui.label" for="price">Price (USD) *</label>
+          <input id="price" name="price" type="number" min="0" required [class]="ui.input" [(ngModel)]="m.priceMonthly" />
+        </div>
+        <div>
+          <label [class]="ui.label" for="musers">Max users</label>
+          <input id="musers" name="maxUsers" type="number" min="1" [class]="ui.input" [(ngModel)]="m.maxUsers" />
+        </div>
+        <div>
+          <label [class]="ui.label" for="mquotes">Quotes / mo</label>
+          <input id="mquotes" name="maxQuotes" type="number" min="1" [class]="ui.input" [(ngModel)]="m.maxQuotationsPerMonth" />
+        </div>
+      </div>
+      <div>
+        <label [class]="ui.label" for="features">Features (one per line)</label>
+        <textarea id="features" name="features" rows="4" [class]="ui.input" [(ngModel)]="m.featuresText"></textarea>
+      </div>
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" [class]="ui.btnSecondary" (click)="form.set(null)">Cancel</button>
+        <button type="submit" [class]="ui.btnPrimary" [disabled]="saving() || f.invalid">Save plan</button>
+      </div>
+    </form>
+  </app-modal>
+}

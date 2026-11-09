@@ -1,0 +1,109 @@
+<app-page-header [title]="id() ? 'Edit business' : 'Add business'"
+  [subtitle]="id() ? model.name : 'Create the company account and its first admin login.'">
+  <a back routerLink="/superadmin/businesses" [class]="ui.btnGhost + ' mb-2 -ml-2'"><app-icon name="arrowLeft" size="size-4" />Businesses</a>
+</app-page-header>
+
+@if (loading()) {
+  <app-loading />
+} @else {
+  <form #f="ngForm" (ngSubmit)="save()" class="space-y-6">
+    <section [class]="ui.card">
+      <h2 class="border-b border-slate-200 px-5 py-4 text-base font-semibold text-slate-900">Company</h2>
+      <div class="grid gap-4 p-5 sm:grid-cols-2">
+        <div>
+          <label [class]="ui.label" for="name">Business name *</label>
+          <input id="name" name="name" required [class]="ui.input" [(ngModel)]="model.name" />
+        </div>
+        <div>
+          <label [class]="ui.label" for="industry">Industry</label>
+          <input id="industry" name="industry" [class]="ui.input" [(ngModel)]="model.industry" />
+        </div>
+        <div>
+          <label [class]="ui.label" for="email">Company email *</label>
+          <input id="email" name="email" type="email" required email [class]="ui.input" [(ngModel)]="model.email" />
+        </div>
+        <div>
+          <label [class]="ui.label" for="phone">Phone</label>
+          <input id="phone" name="phone" [class]="ui.input" [(ngModel)]="model.phone" />
+        </div>
+        <div class="sm:col-span-2">
+          <label [class]="ui.label" for="address">Address</label>
+          <textarea id="address" name="address" rows="2" [class]="ui.input" [(ngModel)]="model.address"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section [class]="ui.card">
+      <h2 class="border-b border-slate-200 px-5 py-4 text-base font-semibold text-slate-900">Subscription &amp; defaults</h2>
+      <div class="grid gap-4 p-5 sm:grid-cols-3">
+        <div>
+          <label [class]="ui.label" for="plan">Plan *</label>
+          <select id="plan" name="planId" required [class]="ui.input" [(ngModel)]="model.planId">
+            @for (p of plans(); track p.id) {
+              <option [value]="p.id">{{ p.name }} — {{ '$' + p.priceMonthly }}/mo</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label [class]="ui.label" for="status">Status *</label>
+          <select id="status" name="status" required [class]="ui.input" [(ngModel)]="model.status">
+            <option value="trial">Trial</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </div>
+        <div>
+          <label [class]="ui.label" for="currency">Currency *</label>
+          <select id="currency" name="currency" required [class]="ui.input" [(ngModel)]="model.currency">
+            @for (c of currencies; track c) {
+              <option [value]="c">{{ c }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label [class]="ui.label" for="prefix">Quotation prefix *</label>
+          <input id="prefix" name="quotePrefix" required maxlength="6" [class]="ui.input + ' uppercase'" [(ngModel)]="model.quotePrefix" />
+          <p class="mt-1 text-xs text-slate-500">Numbers look like {{ (model.quotePrefix || 'QUO').toUpperCase() }}-0001</p>
+        </div>
+        <div>
+          <label [class]="ui.label" for="tax">Default tax rate (%)</label>
+          <input id="tax" name="defaultTaxRate" type="number" min="0" max="100" [class]="ui.input" [(ngModel)]="model.defaultTaxRate" />
+        </div>
+        <div class="sm:col-span-3">
+          <label [class]="ui.label" for="terms">Default terms</label>
+          <textarea id="terms" name="defaultTerms" rows="2" [class]="ui.input" [(ngModel)]="model.defaultTerms"></textarea>
+        </div>
+      </div>
+    </section>
+
+    @if (!id()) {
+      <section [class]="ui.card">
+        <div class="border-b border-slate-200 px-5 py-4">
+          <h2 class="text-base font-semibold text-slate-900">Business admin login</h2>
+          <p class="text-sm text-slate-500">The person who will manage this business's quotations.</p>
+        </div>
+        <div class="grid gap-4 p-5 sm:grid-cols-3">
+          <div>
+            <label [class]="ui.label" for="adminName">Full name *</label>
+            <input id="adminName" name="adminName" required [class]="ui.input" [(ngModel)]="model.adminName" />
+          </div>
+          <div>
+            <label [class]="ui.label" for="adminEmail">Email *</label>
+            <input id="adminEmail" name="adminEmail" type="email" required email [class]="ui.input" [(ngModel)]="model.adminEmail" />
+          </div>
+          <div>
+            <label [class]="ui.label" for="adminPassword">Temporary password *</label>
+            <input id="adminPassword" name="adminPassword" required minlength="6" [class]="ui.input" [(ngModel)]="model.adminPassword" />
+          </div>
+        </div>
+      </section>
+    }
+
+    <div class="flex justify-end gap-3">
+      <a routerLink="/superadmin/businesses" [class]="ui.btnSecondary">Cancel</a>
+      <button type="submit" [class]="ui.btnPrimary" [disabled]="saving() || f.invalid">
+        {{ saving() ? 'Saving…' : id() ? 'Save changes' : 'Create business' }}
+      </button>
+    </div>
+  </form>
+}
