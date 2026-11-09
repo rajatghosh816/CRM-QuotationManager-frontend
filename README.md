@@ -1,4 +1,4 @@
-# Frontend
+# CRM Quotation Manager
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.27.
 
@@ -57,7 +57,7 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
-# pdf-qa-app
+# crm-quotation-manager
 
 This app lets you upload company PDFs (policies, handbooks and so on) and ask questions about them in plain English. Instead of reading a 50-page HR policy, you type "How many days of paid leave do I get?" and get a short answer that names the page it came from.
 

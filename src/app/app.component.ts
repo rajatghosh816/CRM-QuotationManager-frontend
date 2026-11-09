@@ -8,5 +8,5 @@ import { RouterOutlet } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.Eager,
 })
 export class AppComponent {
-  title = 'frontend';
+  title = 'crm-quotation-manager';
 }
