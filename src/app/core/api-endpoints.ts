@@ -16,7 +16,8 @@ const seg = (id: string) => encodeURIComponent(id);
 
 export const ENDPOINTS = {
   auth: {
-    login: url('/auth/login'), //          POST   { email, password } -> AuthResponse
+    login: url('/auth/login'), //          POST   { email, password } -> AuthResponse, sets session cookie
+    logout: url('/auth/logout'), //        POST   clears session cookie
     me: url('/auth/me'), //                GET    -> User
     password: url('/auth/password'), //    PUT    { currentPassword, newPassword }
   },

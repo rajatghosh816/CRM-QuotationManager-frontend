@@ -16,8 +16,8 @@ export interface UserRecord extends User {
   password: string;
 }
 
+/** Login response body. The session itself travels in an HttpOnly cookie set by the server. */
 export interface AuthResponse {
-  token: string;
   user: User;
 }
 

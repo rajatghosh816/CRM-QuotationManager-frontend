@@ -31,7 +31,26 @@ import { mockDb, newId } from './mock-db';
  */
 
 const LATENCY_MS = 250;
-const TOKEN_PREFIX = 'mock.';
+/** Stands in for the HttpOnly session cookie the real server would set. */
+const MOCK_SESSION_KEY = 'crmqm.mock.session';
+
+const mockSession = {
+  get: (): string | null => {
+    try {
+      return localStorage.getItem(MOCK_SESSION_KEY);
+    } catch {
+      return null;
+    }
+  },
+  set: (userId: string | null): void => {
+    try {
+      if (userId) localStorage.setItem(MOCK_SESSION_KEY, userId);
+      else localStorage.removeItem(MOCK_SESSION_KEY);
+    } catch {
+      /* ignore */
+    }
+  },
+};
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -212,7 +231,13 @@ route('POST', '/api/auth/login', ({ body }) => {
   if (user.status !== 'active') throw new ApiError(403, 'This account has been disabled. Contact your administrator.');
   if (user.businessId && businessOf(user).status === 'suspended')
     throw new ApiError(403, 'This business account is suspended. Contact the platform administrator.');
-  return { token: TOKEN_PREFIX + user.id, user: publicUser(user) };
+  mockSession.set(user.id); // "Set-Cookie"
+  return { user: publicUser(user) };
+});
+
+route('POST', '/api/auth/logout', () => {
+  mockSession.set(null); // "clear cookie"
+  return { ok: true };
 });
 
 route('GET', '/api/auth/me', ({ user }) => {
@@ -634,11 +659,10 @@ route('GET', '/api/portal/business', (ctx) => businessOf(requireRole(ctx, 'custo
 
 // ---------- interceptor ----------
 
-function userFromToken(req: HttpRequest<unknown>): UserRecord | null {
-  const header = req.headers.get('Authorization') ?? '';
-  const token = header.replace(/^Bearer\s+/i, '');
-  if (!token.startsWith(TOKEN_PREFIX)) return null;
-  const user = db().users.find((u) => u.id === token.slice(TOKEN_PREFIX.length));
+function userFromSession(): UserRecord | null {
+  const id = mockSession.get();
+  if (!id) return null;
+  const user = db().users.find((u) => u.id === id);
   return user && user.status === 'active' ? user : null;
 }
 
@@ -652,7 +676,7 @@ function handle(req: HttpRequest<unknown>): Observable<HttpResponse<unknown>> {
     const params = Object.fromEntries(r.keys.map((k, i) => [k, decodeURIComponent(match[i + 1])]));
     try {
       expireOverdue();
-      const body = r.handler({ req, params, body: structuredClone(req.body ?? {}), user: userFromToken(req) });
+      const body = r.handler({ req, params, body: structuredClone(req.body ?? {}), user: userFromSession() });
       if (req.method !== 'GET') mockDb.save();
       // Clone so components can never mutate the "database" by reference.
       return of(new HttpResponse({ status: 200, body: structuredClone(body), url: req.url }));
