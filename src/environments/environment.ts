@@ -9,7 +9,7 @@ export const environment: Environment = {
   name: 'dev',
   production: false,
   apiUrl: '/api',
-  useMockBackend: true,
+  useMockBackend: false,
   // Add a prefix here as soon as the backend finishes it, e.g. ['/auth', '/business/customers'].
   liveEndpoints: [],
 };
