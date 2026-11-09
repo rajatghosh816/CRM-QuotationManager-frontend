@@ -1,12 +1,13 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { ToastContainerComponent } from './shared/toast-container.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-  templateUrl: './app.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  imports: [RouterOutlet, ToastContainerComponent],
+  template: `
+    <router-outlet />
+    <app-toast-container />
+  `,
 })
-export class AppComponent {
-  title = 'crm-quotation-manager';
-}
+export class AppComponent {}

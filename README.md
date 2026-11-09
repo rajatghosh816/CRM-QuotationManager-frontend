@@ -1,93 +1,89 @@
 # CRM Quotation Manager
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.27.
+One Angular app with three areas:
 
-## Development server
+| Area | URL | Who | What they do |
+|---|---|---|---|
+| Super admin | `/superadmin` | Platform owner | Onboard businesses, manage subscription plans, enable/disable users |
+| Business admin | `/business` | A business on the platform | Manage customers and products, create, send and track quotations |
+| Customer portal | `/portal` | A business's customer | View quotations sent to them, accept or decline, print |
 
-To start a local development server, run:
+The UI uses Tailwind CSS v4 utility classes only. `src/styles.css` only imports Tailwind.
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Run it
 
 ```bash
-ng generate component component-name
+npm install
+npm start          # http://localhost:4200
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Demo accounts (mock data)
 
-```bash
-ng generate --help
+| Role | Email | Password |
+|---|---|---|
+| Super admin | admin@crm.test | admin123 |
+| Business admin (Acme Interiors) | owner@acme.test | admin123 |
+| Business admin (BrightWave Solar) | owner@brightwave.test | admin123 |
+| Customer (of Acme) | john@carterhomes.test | customer123 |
+| Customer (of BrightWave) | rahul@mehtatextiles.test | customer123 |
+
+GreenLeaf Catering (`owner@greenleaf.test`) is suspended, so its users cannot sign in.
+Changes are saved in the browser's localStorage. Use **Reset demo data** on the login page to start over.
+
+## How the mock data works
+
+Components never touch mock data directly. They call services in `src/app/core/services/`, and those services make real `HttpClient` requests to `/api/...`.
+`src/app/core/mock/mock-backend.interceptor.ts` intercepts those requests and answers them from an in-memory database seeded by `core/mock/seed-data.ts`. It adds network latency, sends proper error responses, checks roles and scopes each request to the signed-in user's business or customer record.
+
+**To switch to the real backend:**
+
+1. Remove `mockBackendInterceptor` from `src/app/app.config.ts`.
+2. Set `API_URL` in `src/app/core/api.ts`, or add a dev-server proxy for `/api`.
+3. Build the endpoints listed below. The request and response shapes are the types in `src/app/core/models.ts`.
+
+## API contract
+
+Every endpoint except login needs `Authorization: Bearer <token>`. Errors return `{ "message": string }`.
+
+**Auth**
+- `POST /api/auth/login` `{email, password}` → `{token, user}`
+- `GET /api/auth/me` → `User`
+- `PUT /api/auth/password` `{currentPassword, newPassword}`
+
+**Super admin** (`superadmin` role)
+- `GET /api/admin/stats` → `PlatformStats`
+- `GET|POST /api/admin/businesses`, `GET|PUT|DELETE /api/admin/businesses/:id` (POST also creates the first business admin)
+- `GET|POST /api/admin/plans`, `PUT|DELETE /api/admin/plans/:id`
+- `GET /api/admin/users`, `PATCH /api/admin/users/:id` `{status}`
+
+**Business admin** (`business_admin` role, scoped to the user's business)
+- `GET /api/business/stats` → `BusinessStats`
+- `GET|PUT /api/business/profile`
+- `GET|POST /api/business/customers`, `GET|PUT|DELETE /api/business/customers/:id` (POST also creates the customer's portal login)
+- `GET|POST /api/business/products`, `PUT|DELETE /api/business/products/:id`
+- `GET|POST /api/business/quotations`, `GET|PUT|DELETE /api/business/quotations/:id` (body may include `send: true`)
+- `POST /api/business/quotations/:id/send`, `POST /api/business/quotations/:id/duplicate`
+
+**Customer portal** (`customer` role, scoped to the user's customer record)
+- `GET /api/portal/stats`, `GET /api/portal/business`
+- `GET /api/portal/quotations`, `GET /api/portal/quotations/:id` (marks a `sent` quotation as `viewed`)
+- `POST /api/portal/quotations/:id/accept` `{comment?}`, `POST /api/portal/quotations/:id/reject` `{comment}`
+- `GET|PUT /api/portal/profile`
+
+## Quotation lifecycle
+
+`draft` → `sent` → `viewed` (the customer opened it) → `accepted` / `rejected`.
+A `sent` or `viewed` quotation becomes `expired` after its valid-until date. Editing a sent quotation moves it back to `draft` until it is re-sent. Accepted quotations are locked; duplicate one to make changes.
+
+## Project layout
+
 ```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
+src/app/
+  core/          models, API services, auth, guards, mock backend
+  shared/        shell layout, UI pieces, quotation document, Tailwind class presets (ui.ts)
+  features/
+    auth/        login
+    superadmin/  dashboard, businesses, plans, users, account
+    business/    dashboard, quotations, editor, customers, products, settings
+    portal/      home, quotations, quotation response, profile
 ```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
-# crm-quotation-manager
-
-This app lets you upload company PDFs (policies, handbooks and so on) and ask questions about them in plain English. Instead of reading a 50-page HR policy, you type "How many days of paid leave do I get?" and get a short answer that names the page it came from.
-
-The three parts
-Frontend (Angular, frontend/): the web page you use. It has the upload area, the document list, the chat for one document, and the floating chatbot. It doesn't do any of the thinking; it sends your requests to the backend and shows the replies.
-
-Backend (FastAPI in Python, backend/): the server on port 8000. It receives uploads, stores them, searches them and builds the answers.
-
-The LLM (through OpenRouter): an AI model running on someone else's server. The backend sends it some text and a question, and it writes the reply.
-
-What happens when you upload a PDF
-The backend:
-
-Saves the file.
-Pulls the text out of each page.
-Cuts the text into small pieces of about 1000 characters ("chunks").
-Turns each chunk into a list of numbers that represents its meaning. This is called an embedding, and a small AI model on your machine produces it. Chunks about similar topics get similar numbers.
-Stores those chunks and numbers in ChromaDB, a database built for "find things similar to this". It also writes a simple record (name, size, pages) to SQLite, which is what fills the document list.
-What happens when you ask a question
-The question is turned into numbers the same way.
-ChromaDB finds the 4 chunks whose meaning is closest to the question, for example the paragraph about leave policy.
-The backend sends only those 4 chunks and your question to the LLM, with the instruction: "answer using only these excerpts; if the answer isn't there, say so."
-The LLM writes the answer, and you see it with the page numbers it came from.
-This approach is called RAG (retrieval-augmented generation): first find the relevant text, then have the AI write an answer from it.
-
-Why do it this way?
-The AI can't read your files on its own. It only knows what was in its training data. RAG hands it the right pages at the moment you ask.
-Whole documents are too big to send every time. Sending only the 4 relevant chunks keeps it fast and cheap.
-It's less likely to make things up, because it's told to use only the excerpts, and the page numbers let you check the answer.
-The two chat modes
-The main chat panel asks about the one document you've selected.
-The floating chatbot searches across every uploaded document and remembers the conversation, so follow-ups like "what about sick leave?" work.
-In short, it's a search engine for your PDFs that answers in sentences instead of giving you a list of links. The README I added has the same explanation with more technical detail.

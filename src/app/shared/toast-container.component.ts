@@ -1,0 +1,28 @@
+import { Component, inject } from '@angular/core';
+import { ToastService } from '../core/services/toast.service';
+import { IconComponent } from './icon.component';
+
+@Component({
+  selector: 'app-toast-container',
+  imports: [IconComponent],
+  template: `
+    <div class="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2 px-4 sm:items-end sm:pr-6 print:hidden"
+      aria-live="polite">
+      @for (t of toasts.toasts(); track t.id) {
+        <div class="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl px-4 py-3 text-sm shadow-lg ring-1"
+          [class]="t.kind === 'error' ? 'bg-rose-50 text-rose-800 ring-rose-200'
+            : t.kind === 'success' ? 'bg-emerald-50 text-emerald-800 ring-emerald-200'
+            : 'bg-white text-slate-800 ring-slate-200'">
+          <app-icon [name]="t.kind === 'error' ? 'x' : 'check'" />
+          <p class="flex-1">{{ t.text }}</p>
+          <button type="button" class="opacity-60 hover:opacity-100" (click)="toasts.dismiss(t.id)" aria-label="Dismiss">
+            <app-icon name="x" size="size-4" />
+          </button>
+        </div>
+      }
+    </div>
+  `,
+})
+export class ToastContainerComponent {
+  toasts = inject(ToastService);
+}

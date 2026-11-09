@@ -1,0 +1,25 @@
+import { DatePipe } from '@angular/common';
+import { Component, computed, input } from '@angular/core';
+import { QuotationActivity } from '../core/models';
+
+@Component({
+  selector: 'app-activity-log',
+  imports: [DatePipe],
+  template: `
+    <ol class="space-y-4">
+      @for (a of newestFirst(); track $index) {
+        <li class="relative flex gap-3">
+          <span class="mt-1.5 size-2 shrink-0 rounded-full bg-indigo-500"></span>
+          <div class="min-w-0">
+            <p class="text-sm text-slate-800">{{ a.message }}</p>
+            <p class="text-xs text-slate-500">{{ a.by }} · {{ a.at | date: 'MMM d, y, h:mm a' }}</p>
+          </div>
+        </li>
+      }
+    </ol>
+  `,
+})
+export class ActivityLogComponent {
+  activity = input.required<QuotationActivity[]>();
+  newestFirst = computed(() => [...this.activity()].reverse());
+}

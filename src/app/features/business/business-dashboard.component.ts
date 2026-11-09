@@ -1,0 +1,96 @@
+import { CurrencyPipe, DatePipe } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
+import { errorMessage } from '../../core/api';
+import { Business, BusinessStats, QuotationDetail } from '../../core/models';
+import { quotationTotals } from '../../core/quotation-math';
+import { BusinessApiService } from '../../core/services/business-api.service';
+import { ToastService } from '../../core/services/toast.service';
+import { EmptyStateComponent } from '../../shared/empty-state.component';
+import { IconComponent } from '../../shared/icon.component';
+import { LoadingComponent } from '../../shared/loading.component';
+import { PageHeaderComponent } from '../../shared/page-header.component';
+import { StatCardComponent } from '../../shared/stat-card.component';
+import { StatusBadgeComponent } from '../../shared/status-badge.component';
+import { ui } from '../../shared/ui';
+
+@Component({
+  selector: 'app-business-dashboard',
+  imports: [CurrencyPipe, DatePipe, RouterLink, PageHeaderComponent, StatCardComponent, StatusBadgeComponent, LoadingComponent, EmptyStateComponent, IconComponent],
+  template: `
+    @if (data(); as d) {
+      @let cur = d.business.currency;
+      <app-page-header [title]="d.business.name" subtitle="Your quotation pipeline at a glance.">
+        <a routerLink="/business/quotations/new" [class]="ui.btnPrimary"><app-icon name="plus" size="size-4" />New quotation</a>
+      </app-page-header>
+
+      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <app-stat-card label="Awaiting response" [value]="d.stats.awaiting" icon="send"
+          [hint]="(d.stats.pipelineValue | currency: cur : 'symbol' : '1.0-0') + ' in open quotes'" />
+        <app-stat-card label="Won" [value]="d.stats.wonValue | currency: cur : 'symbol' : '1.0-0'" icon="check"
+          [hint]="d.stats.accepted + ' accepted quotation(s)'" />
+        <app-stat-card label="Win rate" [value]="d.stats.conversionRate + '%'" icon="chart"
+          [hint]="d.stats.accepted + ' won · ' + d.stats.rejected + ' lost'" />
+        <app-stat-card label="Drafts" [value]="d.stats.draft" icon="document"
+          [hint]="d.stats.customers + ' customers · ' + d.stats.products + ' products'" />
+      </div>
+
+      <section [class]="ui.card + ' mt-6 overflow-hidden'">
+        <div class="flex items-center justify-between px-5 py-4">
+          <h2 class="text-base font-semibold text-slate-900">Recent activity</h2>
+          <a routerLink="/business/quotations" [class]="ui.link + ' text-sm'">All quotations</a>
+        </div>
+        @if (d.stats.recent.length === 0) {
+          <app-empty-state title="No quotations yet" message="Create your first quotation to see it here.">
+            <a routerLink="/business/quotations/new" [class]="ui.btnPrimary">New quotation</a>
+          </app-empty-state>
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th [class]="ui.th">Quotation</th><th [class]="ui.th">Customer</th>
+                  <th [class]="ui.th + ' text-right'">Total</th><th [class]="ui.th">Status</th><th [class]="ui.th">Updated</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                @for (q of d.stats.recent; track q.id) {
+                  <tr class="hover:bg-slate-50">
+                    <td [class]="ui.td">
+                      <a [routerLink]="['/business/quotations', q.id]" class="font-medium text-slate-900 hover:text-indigo-600">{{ q.number }}</a>
+                      <p class="max-w-xs truncate text-xs text-slate-500">{{ q.title }}</p>
+                    </td>
+                    <td [class]="ui.td">{{ q.customer.name }}</td>
+                    <td [class]="ui.td + ' text-right font-medium whitespace-nowrap'">{{ total(q) | currency: cur }}</td>
+                    <td [class]="ui.td"><app-status-badge [status]="q.status" /></td>
+                    <td [class]="ui.td + ' whitespace-nowrap'">{{ q.updatedAt | date: 'MMM d' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    } @else {
+      <app-loading />
+    }
+  `,
+})
+export class BusinessDashboardComponent {
+  private api = inject(BusinessApiService);
+  private toast = inject(ToastService);
+  ui = ui;
+  data = signal<{ stats: BusinessStats; business: Business } | null>(null);
+
+  constructor() {
+    forkJoin({ stats: this.api.stats(), business: this.api.profile() }).subscribe({
+      next: (d) => this.data.set(d),
+      error: (e) => this.toast.error(errorMessage(e)),
+    });
+  }
+
+  total(q: QuotationDetail): number {
+    return quotationTotals(q.items, q.discountPercent).total;
+  }
+}
